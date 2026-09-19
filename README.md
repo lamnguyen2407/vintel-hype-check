@@ -25,7 +25,7 @@ Browser microphone constraints enable echo cancellation, noise suppression, auto
 
 ## AI judging
 
-The server evaluates both players in the same request to reduce ordering bias. It uses strict performance bands, question-specific rubrics, independent scoring, prompt-injection boundaries, and hard maximums for every criterion. A deterministic local backup judge keeps the game playable if the API is unavailable.
+The server evaluates both players in the same request to reduce ordering bias. Knowledge rounds use strict accuracy bands, while the hype round generously rewards shameless praise, absurd exaggeration, and comedy without requiring facts or a formal pitch. A deterministic local backup judge keeps the game playable if the API is unavailable.
 
 ## Run locally
 
