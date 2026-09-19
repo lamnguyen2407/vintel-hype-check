@@ -1,7 +1,7 @@
 import { ZodError } from "zod";
 
 import { buildFallbackResult } from "@/lib/fallback-judge";
-import { generateGeminiContent } from "@/lib/gemini-api";
+import { generateGeminiContent, getGeminiModelChain } from "@/lib/gemini-api";
 import { getQuestionById } from "@/lib/game-config";
 import {
   enforceHypeAlignment,
@@ -66,8 +66,8 @@ function finalizeScores(
 export async function GET() {
   return Response.json({
     configured: Boolean(process.env.GEMINI_API_KEY),
-    judgeModel: process.env.GEMINI_JUDGE_MODEL ?? "gemini-3.8-flash",
-    transcriptionModel: process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-3.8-flash",
+    judgeModel: process.env.GEMINI_JUDGE_MODEL ?? "gemini-2.5-flash",
+    transcriptionModel: process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-2.5-flash",
   });
 }
 
@@ -93,16 +93,31 @@ export async function POST(request: Request) {
       );
     }
 
-    const text = await generateGeminiContent({
-      apiKey: process.env.GEMINI_API_KEY,
-      model: process.env.GEMINI_JUDGE_MODEL ?? "gemini-3.8-flash",
-      systemPrompt: JUDGE_SYSTEM_PROMPT,
-      prompt: buildJudgeInput(question, payload.entries),
-      responseJsonSchema: judgeJsonSchema,
-      temperature: 0.15,
-    });
-    const output = judgeModelSchema.parse(JSON.parse(text));
-    return Response.json(finalizeScores(payload.round, payload.questionId, output, payload.entries));
+    try {
+      const primaryModel = process.env.GEMINI_JUDGE_MODEL ?? "gemini-2.5-flash";
+      const [model, ...fallbackModels] = getGeminiModelChain(primaryModel);
+      const result = await generateGeminiContent({
+        apiKey: process.env.GEMINI_API_KEY,
+        model,
+        fallbackModels,
+        systemPrompt: JUDGE_SYSTEM_PROMPT,
+        prompt: buildJudgeInput(question, payload.entries),
+        responseJsonSchema: judgeJsonSchema,
+        temperature: 0.15,
+      });
+      const output = judgeModelSchema.parse(JSON.parse(result.text));
+      return Response.json(finalizeScores(payload.round, payload.questionId, output, payload.entries));
+    } catch (error) {
+      console.error("Judge API failed; using automatic backup:", error);
+      return Response.json(
+        buildFallbackResult(
+          payload.round,
+          payload.questionId,
+          payload.entries,
+          "Gemini was temporarily busy, so the backup judge scored this round automatically.",
+        ),
+      );
+    }
   } catch (error) {
     if (error instanceof ZodError) {
       return Response.json({ error: "The match data is invalid.", details: error.issues }, { status: 400 });
@@ -110,8 +125,8 @@ export async function POST(request: Request) {
 
     console.error("Judge API failed:", error);
     return Response.json(
-      { error: "The AI judge is temporarily unavailable. Try the backup judge." },
-      { status: 502 },
+      { error: "The AI judge could not process this round." },
+      { status: 500 },
     );
   }
 }
