@@ -1,49 +1,68 @@
 # Hype Check
 
-A two-player, AI-scored pitch battle built for Vintelligence Club Fair. Each player gets 15 seconds to sell the room on Vintelligence and VinUniversity. Their speech is transcribed live and scored across four categories.
+A two-player, three-round AI challenge for the Vintelligence Club Fair. Players answer two easy open questions about AI and machine learning, then finish with a shameless Vintelligence hype round.
 
-## Features
+## Game format
 
-- Two players, two rounds, and automatic match totals.
-- Three-second countdown and 15-second speaking timer.
-- Live English or Vietnamese speech-to-text through the Web Speech API.
-- Editable transcripts before judging.
-- OpenAI Structured Outputs with Zod; the API key stays server-side.
-- Both players are scored in the same request to reduce ordering bias.
-- Four scoring categories: creativity 30, delivery 25, specificity 25, and hype 20.
-- Deterministic backup judge when an API key is unavailable.
-- Fullscreen responsive interface designed for a club fair display.
-- Prompt-injection resistance through a strict system prompt and transcript boundaries.
+- Round 1: easy AI knowledge question.
+- Round 2: easy machine-learning explanation question.
+- Round 3: funny, original, and shameless Vintelligence flattery.
+- Each player gets 15 seconds per round.
+- Each round uses a different 100-point rubric.
+- The final scoreboard separates Round 1, Round 2, Round 3, and the 300-point total.
+
+## Speech pipeline
+
+The browser uses two transcription layers:
+
+1. Chrome Speech Recognition supplies immediate live subtitles.
+2. `MediaRecorder` captures a noise-suppressed mono recording.
+3. `/api/transcribe` sends the final recording to `gpt-4o-transcribe`.
+4. A vocabulary prompt and local normalizer preserve names such as Vintelligence, Vintel, VinUniversity, and VinUni.
+5. The player can verify or edit the transcript before judging.
+
+Browser microphone constraints enable echo cancellation, noise suppression, automatic gain control, and a single audio channel. A close external microphone is still recommended for a loud club-fair venue.
+
+## AI judging
+
+The server evaluates both players in the same request to reduce ordering bias. It uses strict performance bands, question-specific rubrics, independent scoring, prompt-injection boundaries, and hard maximums for every criterion. A deterministic local backup judge keeps the game playable if the API is unavailable.
 
 ## Run locally
 
 Requires Node.js 20.9 or newer.
 
-```bash
+```powershell
+cd C:\Users\ADMIN\khen-clb-ai
 npm install
-cp .env.example .env.local
+
+if (!(Test-Path .env.local)) {
+    Copy-Item .env.example .env.local
+}
+
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in Google Chrome.
 
-To enable the OpenAI judge, configure `.env.local`:
+Configure `.env.local` for advanced transcription and AI judging:
 
 ```env
 OPENAI_API_KEY=sk-your-api-key
 OPENAI_MODEL=gpt-6-astra
+OPENAI_TRANSCRIBE_MODEL=gpt-4o-transcribe
 ```
 
-Leave `OPENAI_API_KEY` empty to play the complete game with the backup judge.
+Without an API key, live browser subtitles and the backup judge still work.
 
-## Keyboard controls
+## Controls
 
 - Press `Space` on the ready screen to start a turn.
 - Press `Space` while speaking to finish early.
-- Select English or Vietnamese speech recognition for each player.
-- Edit or manually enter a transcript when the venue is too noisy.
+- Vietnamese is the default speech language; English can be selected per player.
+- Questions and interface copy remain in English.
+- Use Fullscreen mode at the booth.
 
-## Pre-event verification
+## Verification
 
 ```bash
 npm run lint
@@ -52,17 +71,4 @@ npm run build
 npm run start
 ```
 
-Test with the same laptop and microphone that will be used at the booth. Grant Chrome microphone permission before the event and keep a separate hotspot ready.
-
-## Architecture
-
-```text
-Browser microphone
-  → Web Speech API
-  → editable transcript
-  → POST /api/judge
-  → OpenAI structured score or backup judge
-  → round score → final winner
-```
-
-`src/app/api/judge/route.ts` keeps the API key on the server. The frontend never receives or stores the secret.
+Test once with the exact laptop, browser, microphone, speakers, and background music that will be used at the event.
