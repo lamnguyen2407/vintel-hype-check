@@ -38,11 +38,11 @@ type SpeechWindow = Window &
   };
 
 const errorMessages: Record<string, string> = {
-  "not-allowed": "Trình duyệt chưa được cấp quyền microphone.",
-  "audio-capture": "Không tìm thấy microphone khả dụng.",
-  network: "Dịch vụ nhận diện giọng nói đang mất kết nối.",
-  "no-speech": "Chưa nghe thấy giọng nói. Bạn vẫn có thể nhập tay.",
-  aborted: "Đã dừng ghi âm.",
+  "not-allowed": "Microphone access has not been granted.",
+  "audio-capture": "No available microphone was found.",
+  network: "The speech recognition service lost its connection.",
+  "no-speech": "No speech was detected. You can still type the pitch manually.",
+  aborted: "Recording stopped.",
 };
 
 export function useSpeechRecognition(language: string) {
@@ -77,7 +77,7 @@ export function useSpeechRecognition(language: string) {
       speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setError("Browser này chưa hỗ trợ nhận diện giọng nói. Hãy dùng Chrome hoặc nhập tay.");
+      setError("This browser does not support speech recognition. Use Chrome or type the pitch manually.");
       return false;
     }
 
@@ -109,7 +109,7 @@ export function useSpeechRecognition(language: string) {
 
     recognition.onerror = (event) => {
       if (event.error !== "aborted") {
-        setError(errorMessages[event.error] ?? `Lỗi microphone: ${event.error}`);
+        setError(errorMessages[event.error] ?? `Microphone error: ${event.error}`);
       }
       setListening(false);
     };
@@ -122,7 +122,7 @@ export function useSpeechRecognition(language: string) {
       setListening(true);
       return true;
     } catch {
-      setError("Không thể khởi động microphone. Hãy thử lại hoặc nhập tay.");
+      setError("The microphone could not start. Try again or type the pitch manually.");
       setListening(false);
       return false;
     }
