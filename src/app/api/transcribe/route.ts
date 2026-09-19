@@ -1,4 +1,4 @@
-import { generateGeminiContent } from "@/lib/gemini-api";
+import { generateGeminiContent, getGeminiModelChain } from "@/lib/gemini-api";
 
 export const runtime = "nodejs";
 
@@ -37,9 +37,12 @@ export async function POST(request: Request) {
       ? "Transcribe this recording faithfully in Vietnamese, preserving any English AI terms. Return only the transcript, with no labels or commentary. Important names: Vintelligence, Vintel, VinUniversity, VinUni, Data Science and AI Club. Spell these names exactly. Ignore background music and unrelated voices."
       : "Transcribe this recording faithfully in English. Return only the transcript, with no labels or commentary. Important names: Vintelligence, Vintel, VinUniversity, VinUni, Data Science and AI Club. Spell these names exactly. Ignore background music and unrelated voices.";
 
-    const text = await generateGeminiContent({
+    const primaryModel = process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-2.5-flash";
+    const [model, ...fallbackModels] = getGeminiModelChain(primaryModel);
+    const result = await generateGeminiContent({
       apiKey: process.env.GEMINI_API_KEY,
-      model: process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-3.8-flash",
+      model,
+      fallbackModels,
       prompt: vocabularyPrompt,
       audio: {
         mimeType: audio.type || "audio/webm",
@@ -48,9 +51,9 @@ export async function POST(request: Request) {
       temperature: 0,
     });
 
-    const normalizedText = normalizeClubVocabulary(text);
+    const normalizedText = normalizeClubVocabulary(result.text);
     if (!normalizedText) return Response.json({ error: "No speech was detected." }, { status: 422 });
-    return Response.json({ text: normalizedText, model: process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-3.8-flash" });
+    return Response.json({ text: normalizedText, model: result.model });
   } catch (error) {
     console.error("Transcription API failed:", error);
     return Response.json({ error: "Advanced transcription failed. The live transcript is still available." }, { status: 502 });
