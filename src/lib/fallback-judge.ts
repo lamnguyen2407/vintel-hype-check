@@ -1,3 +1,4 @@
+import { getQuestionById } from "@/lib/game-config";
 import type {
   JudgeEntry,
   JudgeResponse,
@@ -5,56 +6,26 @@ import type {
   ScoreBreakdown,
 } from "@/types/game";
 
+const aiTerms = [
+  "ai", "artificial intelligence", "trí tuệ nhân tạo", "model", "mô hình",
+  "data", "dữ liệu", "learn", "học", "pattern", "mẫu", "predict", "dự đoán",
+  "image", "hình ảnh", "voice", "giọng nói", "recommend", "gợi ý",
+];
+
+const reasoningTerms = [
+  "because", "so that", "which means", "for example", "such as", "therefore",
+  "bởi vì", "để", "nghĩa là", "ví dụ", "chẳng hạn", "do đó",
+];
+
 const clubTerms = [
-  "vintelligence",
-  "vinuni",
-  "vinuniversity",
-  "clb",
-  "club",
-  "data",
-  "dữ liệu",
-  "ai",
-  "trí tuệ nhân tạo",
-  "machine learning",
-  "khoa học",
-  "nghiên cứu",
-  "công nghệ",
-  "innovation",
+  "vintelligence", "vintel", "vinuni", "vinuniversity", "club", "clb",
+  "data science", "khoa học dữ liệu", "ai", "machine learning",
 ];
 
-const imageryTerms = [
-  "như",
-  "tựa",
-  "hơn cả",
-  "vũ trụ",
-  "ngôi sao",
-  "mặt trời",
-  "tương lai",
-  "phép màu",
-  "đỉnh cao",
-  "bộ não",
-  "trái tim",
-  "dream",
-  "future",
-  "star",
-  "universe",
-  "brain",
-];
-
-const flatteryTerms = [
-  "tuyệt vời",
-  "xuất sắc",
-  "đỉnh",
-  "xịn",
-  "số một",
-  "vô đối",
-  "không thể thay thế",
-  "best",
-  "amazing",
-  "brilliant",
-  "legendary",
-  "incredible",
-  "world-class",
+const humorTerms = [
+  "universe", "galaxy", "god", "legend", "legendary", "superhero", "rocket",
+  "vũ trụ", "thiên hà", "thần", "huyền thoại", "siêu anh hùng", "tên lửa",
+  "even chatgpt", "chatgpt", "plot twist", "breaking news", "thở", "crush",
 ];
 
 function clamp(value: number, maximum: number) {
@@ -67,60 +38,76 @@ function countMatches(text: string, terms: string[]) {
 
 function stableJitter(text: string) {
   let hash = 0;
-  for (const character of text) {
-    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
-  }
+  for (const character of text) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
   return hash % 3;
 }
 
-function scoreEntry(entry: JudgeEntry): ScoreBreakdown {
+function scoreEntry(entry: JudgeEntry, questionId: string): ScoreBreakdown {
+  const question = getQuestionById(questionId);
+  if (!question) throw new Error("Unknown round question.");
+
   const normalized = entry.text.toLocaleLowerCase("vi-VN").trim();
   const words = normalized.match(/[\p{L}\p{N}]+/gu) ?? [];
-  const uniqueWords = new Set(words);
   const wordCount = words.length;
-  const substance = Math.min(1, wordCount / 24);
-  const uniqueRatio = wordCount ? uniqueWords.size / wordCount : 0;
+  const uniqueRatio = wordCount ? new Set(words).size / wordCount : 0;
+  const substance = Math.min(1, wordCount / 28);
+  const aiHits = countMatches(normalized, aiTerms);
+  const reasoningHits = countMatches(normalized, reasoningTerms);
   const clubHits = countMatches(normalized, clubTerms);
-  const imageryHits = countMatches(normalized, imageryTerms);
-  const flatteryHits = countMatches(normalized, flatteryTerms);
-  const punctuationVariety = new Set(normalized.match(/[!?.,;:]/g) ?? []).size;
+  const humorHits = countMatches(normalized, humorTerms);
   const jitter = stableJitter(normalized);
+  const [first, second, third, fourth] = question.rubric;
 
-  const creativity = clamp(
-    substance * 12 + uniqueRatio * 10 + imageryHits * 3 + jitter,
-    30,
-  );
-  const eloquence = clamp(
-    substance * 12 + uniqueRatio * 8 + punctuationVariety * 1.5,
-    25,
-  );
-  const specificity = clamp(substance * 7 + clubHits * 5, 25);
-  const flattery = clamp(substance * 7 + flatteryHits * 3 + imageryHits, 20);
-  const total = creativity + eloquence + specificity + flattery;
+  let rawScores: number[];
+  if (question.type === "hype") {
+    rawScores = [
+      substance * 13 + humorHits * 5 + jitter,
+      substance * 10 + uniqueRatio * 9 + humorHits * 2,
+      substance * 6 + clubHits * 5,
+      substance * 8 + humorHits * 2 + clubHits * 2,
+    ];
+  } else {
+    rawScores = [
+      substance * 13 + aiHits * 4 + reasoningHits * 2,
+      substance * 12 + reasoningHits * 5 + aiHits * 2,
+      substance * 11 + uniqueRatio * 8 + reasoningHits * 2,
+      substance * 5 + reasoningHits * 4 + Math.min(aiHits, 2) * 2 + jitter,
+    ];
+  }
 
-  let comment = "The judge is still waiting for a pitch with real conviction.";
-  if (total >= 82) comment = "World-class hype — sharp enough to earn an instant club invitation.";
-  else if (total >= 68) comment = "Specific, confident, and dramatic enough to make the model blush.";
-  else if (total >= 50) comment = "Good instincts. One stronger image or punchline would make it land.";
-  else if (total >= 28) comment = "The signal is there, but this pitch needs more evidence and energy.";
+  if (wordCount < 4) rawScores = rawScores.map((score) => Math.min(score, 3));
+  const criteria = [first, second, third, fourth];
+  const metrics = criteria.map((criterion, index) => ({
+    key: criterion.key,
+    label: criterion.label,
+    score: clamp(rawScores[index], criterion.max),
+    max: criterion.max,
+  }));
+  const total = metrics.reduce((sum, metric) => sum + metric.score, 0);
 
-  return {
-    id: entry.id,
-    creativity,
-    eloquence,
-    specificity,
-    flattery,
-    total,
-    comment,
-  };
+  let comment = "The signal did not make it through — give us a clearer answer next time.";
+  if (question.type === "hype") {
+    if (total >= 82) comment = "That was shameless, specific, and absurdly effective. The club’s ego has officially reached orbit.";
+    else if (total >= 62) comment = "Solid hype energy. One sharper punchline would make the room lose it.";
+    else if (total >= 38) comment = "The compliment landed, but the comedy flight is still waiting for clearance.";
+  } else {
+    if (total >= 82) comment = "Accurate, concrete, and cleanly explained — exactly how to make a technical idea feel simple.";
+    else if (total >= 62) comment = "The core idea is right; one more concrete detail would make the explanation stronger.";
+    else if (total >= 38) comment = "There is a useful idea here, but it needs clearer reasoning and a real example.";
+  }
+
+  return { id: entry.id, metrics, total, comment };
 }
 
 export function buildFallbackResult(
   round: number,
+  questionId: string,
   entries: JudgeEntry[],
   warning?: string,
 ): JudgeResponse {
-  const players = entries.map(scoreEntry).sort((a, b) => a.id.localeCompare(b.id));
+  const players = entries
+    .map((entry) => scoreEntry(entry, questionId))
+    .sort((a, b) => a.id.localeCompare(b.id));
   const playerA = players.find((player) => player.id === "A");
   const playerB = players.find((player) => player.id === "B");
 
@@ -130,11 +117,5 @@ export function buildFallbackResult(
     if (playerB.total > playerA.total) winner = "B";
   }
 
-  return {
-    round,
-    players,
-    winner,
-    mode: "fallback",
-    warning,
-  };
+  return { round, questionId, players, winner, mode: "fallback", warning };
 }
