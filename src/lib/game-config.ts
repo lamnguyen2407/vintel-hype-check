@@ -30,10 +30,10 @@ const ROUND_TWO_RUBRIC: RubricCriterion[] = [
 ];
 
 const HYPE_RUBRIC: RubricCriterion[] = [
-  { key: "criterion1", label: "Humor", max: 35, description: "Actually funny, playful, and entertaining rather than merely positive." },
-  { key: "criterion2", label: "Originality", max: 25, description: "Unexpected comparisons, punchlines, and creative exaggeration." },
-  { key: "criterion3", label: "Club relevance", max: 20, description: "Specific connection to Vintelligence, VinUniversity, AI, data, or club life." },
-  { key: "criterion4", label: "Positive hype", max: 20, description: "Clearly praises Vintelligence with bold, outrageous, memorable flattery. Criticism earns zero here." },
+  { key: "criterion1", label: "Shameless hype", max: 35, description: "How boldly and enthusiastically the answer praises Vintelligence. Extreme flattery is strongly rewarded." },
+  { key: "criterion2", label: "Absurdity", max: 30, description: "Wild exaggeration, playful nonsense, impossible claims, and gloriously over-the-top comparisons." },
+  { key: "criterion3", label: "Comedy", max: 25, description: "How entertaining, chaotic, or laugh-inducing the answer feels. It may be silly rather than polished." },
+  { key: "criterion4", label: "Vintel energy", max: 10, description: "The hype is recognizably aimed at Vintelligence, Vintel, its events, or its members." },
 ];
 
 export const ROUND_QUESTIONS: RoundQuestion[] = [
@@ -268,7 +268,7 @@ export const ROUND_QUESTIONS: RoundQuestion[] = [
     type: "hype",
     label: "THE SHAMELESS ROUND",
     prompt: "Convince us Vintelligence is the greatest club in the universe.",
-    helper: "The funnier, wilder, and more shameless the flattery, the better.",
+    helper: "No facts needed. Be ridiculous, hilarious, and shamelessly flattering.",
     rubric: HYPE_RUBRIC,
   },
 ];
