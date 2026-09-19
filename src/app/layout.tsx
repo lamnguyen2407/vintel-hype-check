@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Be_Vietnam_Pro, Space_Grotesk } from "next/font/google";
+import type { ReactNode } from "react";
 
 import "./globals.css";
 
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
   description: "Trò chơi AI 1v1 tại Vintelligence Club Fair.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi" className={`${beVietnamPro.variable} ${spaceGrotesk.variable}`}>
       <body>{children}</body>
