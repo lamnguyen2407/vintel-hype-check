@@ -17,13 +17,13 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Khen CLB — AI Compliment Battle",
-  description: "Trò chơi AI 1v1 tại Vintelligence Club Fair.",
+  title: "Hype Check — Vintelligence Club Fair",
+  description: "A two-player AI-scored pitch battle for Vintelligence Club Fair.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="vi" className={`${beVietnamPro.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={`${beVietnamPro.variable} ${spaceGrotesk.variable}`}>
       <body>{children}</body>
     </html>
   );
