@@ -32,7 +32,7 @@ const positiveNegations = [
 ];
 
 const limitsByAlignment: Record<Exclude<HypeAlignment, "supportive">, number[]> = {
-  hostile: [5, 4, 3, 0],
+  hostile: [0, 4, 3, 0],
   "off-target": [7, 6, 4, 0],
   mixed: [12, 8, 8, 4],
 };
