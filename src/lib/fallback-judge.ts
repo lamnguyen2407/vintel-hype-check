@@ -1,4 +1,8 @@
 import { getQuestionById } from "@/lib/game-config";
+import {
+  enforceHypeAlignment,
+  hypeAlignmentComment,
+} from "@/lib/hype-alignment";
 import type {
   JudgeEntry,
   JudgeResponse,
@@ -77,16 +81,24 @@ function scoreEntry(entry: JudgeEntry, questionId: string): ScoreBreakdown {
 
   if (wordCount < 4) rawScores = rawScores.map((score) => Math.min(score, 3));
   const criteria = [first, second, third, fourth];
-  const metrics = criteria.map((criterion, index) => ({
+  let metrics = criteria.map((criterion, index) => ({
     key: criterion.key,
     label: criterion.label,
     score: clamp(rawScores[index], criterion.max),
     max: criterion.max,
   }));
+  let alignmentComment: string | null = null;
+  if (question.type === "hype") {
+    const calibrated = enforceHypeAlignment(metrics, entry.text);
+    metrics = calibrated.metrics;
+    alignmentComment = hypeAlignmentComment(calibrated.alignment);
+  }
   const total = metrics.reduce((sum, metric) => sum + metric.score, 0);
 
   let comment = "The signal did not make it through — give us a clearer answer next time.";
-  if (question.type === "hype") {
+  if (alignmentComment) {
+    comment = alignmentComment;
+  } else if (question.type === "hype") {
     if (total >= 82) comment = "That was shameless, specific, and absurdly effective. The club’s ego has officially reached orbit.";
     else if (total >= 62) comment = "Solid hype energy. One sharper punchline would make the room lose it.";
     else if (total >= 38) comment = "The compliment landed, but the comedy flight is still waiting for clearance.";
