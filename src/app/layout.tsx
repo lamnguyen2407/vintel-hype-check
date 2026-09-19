@@ -1,29 +1,29 @@
 import type { Metadata } from "next";
-import { Be_Vietnam_Pro, Space_Grotesk } from "next/font/google";
+import { Orbitron, Tomorrow } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
 
-const beVietnamPro = Be_Vietnam_Pro({
+const tomorrow = Tomorrow({
   variable: "--font-body",
-  subsets: ["latin", "vietnamese"],
+  subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const spaceGrotesk = Space_Grotesk({
+const orbitron = Orbitron({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
-  title: "Hype Check — Vintelligence Club Fair",
-  description: "A two-player AI-scored pitch battle for Vintelligence Club Fair.",
+  title: "Hype Check — Vintelligence AI Challenge",
+  description: "A three-round AI knowledge and hype battle for Vintelligence Club Fair.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${beVietnamPro.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={`${tomorrow.variable} ${orbitron.variable}`}>
       <body>{children}</body>
     </html>
   );
