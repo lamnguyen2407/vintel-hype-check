@@ -7,33 +7,39 @@ export type GamePhase =
   | "ready"
   | "countdown"
   | "speaking"
+  | "transcribing"
   | "review"
   | "judging"
   | "round-result"
   | "final-result";
+
+export type ScoreMetric = {
+  key: "criterion1" | "criterion2" | "criterion3" | "criterion4";
+  label: string;
+  score: number;
+  max: number;
+};
+
+export type ScoreBreakdown = {
+  id: PlayerId;
+  metrics: ScoreMetric[];
+  total: number;
+  comment: string;
+};
 
 export type Player = {
   id: PlayerId;
   name: string;
   language: LanguageCode;
   transcripts: string[];
-  roundScores: number[];
-};
-
-export type ScoreBreakdown = {
-  id: PlayerId;
-  creativity: number;
-  eloquence: number;
-  specificity: number;
-  flattery: number;
-  total: number;
-  comment: string;
+  roundResults: ScoreBreakdown[];
 };
 
 export type JudgeMode = "openai" | "fallback";
 
 export type JudgeResponse = {
   round: number;
+  questionId: string;
   players: ScoreBreakdown[];
   winner: PlayerId | "tie";
   mode: JudgeMode;
