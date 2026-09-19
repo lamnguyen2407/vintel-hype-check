@@ -35,7 +35,7 @@ export type Player = {
   roundResults: ScoreBreakdown[];
 };
 
-export type JudgeMode = "openai" | "fallback";
+export type JudgeMode = "gemini" | "fallback";
 
 export type JudgeResponse = {
   round: number;
