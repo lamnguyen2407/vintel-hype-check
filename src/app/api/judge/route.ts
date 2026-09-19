@@ -1,8 +1,7 @@
-import OpenAI from "openai";
-import { zodTextFormat } from "openai/helpers/zod";
 import { ZodError } from "zod";
 
 import { buildFallbackResult } from "@/lib/fallback-judge";
+import { generateGeminiContent } from "@/lib/gemini-api";
 import { getQuestionById } from "@/lib/game-config";
 import {
   enforceHypeAlignment,
@@ -10,6 +9,7 @@ import {
 } from "@/lib/hype-alignment";
 import { buildJudgeInput, JUDGE_SYSTEM_PROMPT } from "@/lib/judge-prompt";
 import {
+  judgeJsonSchema,
   judgeModelSchema,
   judgeRequestSchema,
   type JudgeModelOutput,
@@ -60,14 +60,14 @@ function finalizeScores(
     if (playerB.total > playerA.total) winner = "B";
   }
 
-  return { round, questionId, players, winner, mode: "openai" };
+  return { round, questionId, players, winner, mode: "gemini" };
 }
 
 export async function GET() {
   return Response.json({
-    configured: Boolean(process.env.OPENAI_API_KEY),
-    judgeModel: process.env.OPENAI_MODEL ?? "gpt-6-astra",
-    transcriptionModel: process.env.OPENAI_TRANSCRIBE_MODEL ?? "gpt-4o-transcribe",
+    configured: Boolean(process.env.GEMINI_API_KEY),
+    judgeModel: process.env.GEMINI_JUDGE_MODEL ?? "gemini-3.8-flash",
+    transcriptionModel: process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-3.8-flash",
   });
 }
 
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     }
 
     const forceFallback = new URL(request.url).searchParams.get("fallback") === "1";
-    if (!process.env.OPENAI_API_KEY || forceFallback) {
+    if (!process.env.GEMINI_API_KEY || forceFallback) {
       return Response.json(
         buildFallbackResult(
           payload.round,
@@ -88,23 +88,21 @@ export async function POST(request: Request) {
           payload.entries,
           forceFallback
             ? "The backup judge was requested for this round."
-            : "OPENAI_API_KEY is not configured, so the backup judge scored this round.",
+            : "GEMINI_API_KEY is not configured, so the backup judge scored this round.",
         ),
       );
     }
 
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const response = await client.responses.parse({
-      model: process.env.OPENAI_MODEL ?? "gpt-6-astra",
-      input: [
-        { role: "system", content: JUDGE_SYSTEM_PROMPT },
-        { role: "user", content: buildJudgeInput(question, payload.entries) },
-      ],
-      text: { format: zodTextFormat(judgeModelSchema, "hype_check_scores") },
+    const text = await generateGeminiContent({
+      apiKey: process.env.GEMINI_API_KEY,
+      model: process.env.GEMINI_JUDGE_MODEL ?? "gemini-3.8-flash",
+      systemPrompt: JUDGE_SYSTEM_PROMPT,
+      prompt: buildJudgeInput(question, payload.entries),
+      responseJsonSchema: judgeJsonSchema,
+      temperature: 0.15,
     });
-
-    if (!response.output_parsed) throw new Error("The judge returned no structured score.");
-    return Response.json(finalizeScores(payload.round, payload.questionId, response.output_parsed, payload.entries));
+    const output = judgeModelSchema.parse(JSON.parse(text));
+    return Response.json(finalizeScores(payload.round, payload.questionId, output, payload.entries));
   } catch (error) {
     if (error instanceof ZodError) {
       return Response.json({ error: "The match data is invalid.", details: error.issues }, { status: 400 });
