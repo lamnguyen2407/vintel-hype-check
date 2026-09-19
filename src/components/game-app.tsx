@@ -18,7 +18,7 @@ import type {
 
 import { ArrowIcon, MicIcon, RefreshIcon, TrophyIcon } from "./icons";
 
-const TURN_SECONDS = 15;
+const ROUND_SECONDS: Record<number, number> = { 1: 20, 2: 20, 3: 30 };
 const COUNTDOWN_SECONDS = 3;
 const TOTAL_ROUNDS = 3;
 
@@ -101,7 +101,7 @@ function SetupScreen({ onStart }: { onStart: (players: Player[]) => void }) {
         <h1>HYPE<br /><em>CHECK</em></h1>
         <p>Think fast. Speak clearly. Finish with the most shameless Vintelligence hype the room has ever heard.</p>
         <div className="hero-specs">
-          <span>02 PLAYERS</span><span>03 ROUNDS</span><span>15 SEC EACH</span>
+          <span>02 PLAYERS</span><span>03 ROUNDS</span><span>20 / 20 / 30 SEC</span>
         </div>
       </section>
 
@@ -178,7 +178,7 @@ export default function GameApp() {
   const [questionIds, setQuestionIds] = useState<string[]>(["ai-everyday-problem", "ml-ten-year-old", "vintel-hype"]);
   const [round, setRound] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [seconds, setSeconds] = useState(TURN_SECONDS);
+  const [seconds, setSeconds] = useState(ROUND_SECONDS[1]);
   const [draftTranscript, setDraftTranscript] = useState("");
   const [transcriptionNotice, setTranscriptionNotice] = useState<string | null>(null);
   const [roundResult, setRoundResult] = useState<JudgeResponse | null>(null);
@@ -190,6 +190,7 @@ export default function GameApp() {
 
   const activePlayer = players[activeIndex];
   const activeQuestion = getQuestionById(questionIds[round - 1], round) ?? getQuestionById("vintel-hype")!;
+  const turnDuration = ROUND_SECONDS[round] ?? ROUND_SECONDS[1];
   const {
     transcript: speechTranscript,
     error: speechError,
@@ -208,9 +209,9 @@ export default function GameApp() {
   }, []);
 
   const beginSpeaking = useCallback(() => {
-    setSeconds(TURN_SECONDS);
+    setSeconds(turnDuration);
     setPhase("speaking");
-  }, []);
+  }, [turnDuration]);
 
   useEffect(() => {
     if (phase !== "countdown") return;
@@ -261,7 +262,7 @@ export default function GameApp() {
 
   useEffect(() => {
     if (phase !== "speaking") return;
-    let remaining = TURN_SECONDS;
+    let remaining = turnDuration;
     const interval = window.setInterval(() => {
       remaining -= 1;
       setSeconds(Math.max(remaining, 0));
@@ -271,7 +272,7 @@ export default function GameApp() {
       }
     }, 1_000);
     return () => window.clearInterval(interval);
-  }, [finishSpeaking, phase]);
+  }, [finishSpeaking, phase, turnDuration]);
 
   const startTurn = useCallback(async () => {
     resetSpeech();
@@ -417,7 +418,7 @@ export default function GameApp() {
   if (phase === "setup") return <SetupScreen onStart={startGame} />;
 
   const resultFor = (id: PlayerId) => roundResult?.players.find((score) => score.id === id);
-  const progress = phase === "speaking" ? ((TURN_SECONDS - seconds) / TURN_SECONDS) * 100 : 0;
+  const progress = phase === "speaking" ? ((turnDuration - seconds) / turnDuration) * 100 : 0;
   const arenaPhase = ["ready", "countdown", "speaking"].includes(phase);
 
   return (
@@ -482,13 +483,13 @@ export default function GameApp() {
                     <>
                       <span className="eyebrow">PLAYER {activePlayer.id} · READY</span>
                       <h1>{activePlayer.name}</h1>
-                      <p>One question. Fifteen seconds. Make every word count.</p>
+                      <p>One question. {turnDuration} seconds. Make every word count.</p>
                       <button className="primary-button" type="button" onClick={() => void startTurn()}><MicIcon size={19} /> START TURN</button>
                       <small>SPACE TO START · {activePlayer.language === "vi-VN" ? "VIETNAMESE INPUT" : "ENGLISH INPUT"}</small>
                     </>
                   )}
                   {phase === "countdown" && (
-                    <><span className="eyebrow">MIC LOCKED · GET READY</span><div className="countdown-number" key={seconds}>{seconds}</div><p>Your 15 seconds start now.</p></>
+                    <><span className="eyebrow">MIC LOCKED · GET READY</span><div className="countdown-number" key={seconds}>{seconds}</div><p>Your {turnDuration} seconds start now.</p></>
                   )}
                   {phase === "speaking" && (
                     <>
