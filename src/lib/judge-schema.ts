@@ -34,5 +34,31 @@ export const judgeModelSchema = z.object({
     }),
 });
 
+export const judgeJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    players: {
+      type: "array",
+      minItems: 2,
+      maxItems: 2,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          id: { type: "string", enum: ["A", "B"] },
+          criterion1: { type: "integer", minimum: 0, maximum: 100 },
+          criterion2: { type: "integer", minimum: 0, maximum: 100 },
+          criterion3: { type: "integer", minimum: 0, maximum: 100 },
+          criterion4: { type: "integer", minimum: 0, maximum: 100 },
+          comment: { type: "string", description: "English feedback in 28 words or fewer." },
+        },
+        required: ["id", "criterion1", "criterion2", "criterion3", "criterion4", "comment"],
+      },
+    },
+  },
+  required: ["players"],
+} satisfies Record<string, unknown>;
+
 export type JudgeRequest = z.infer<typeof judgeRequestSchema>;
 export type JudgeModelOutput = z.infer<typeof judgeModelSchema>;
