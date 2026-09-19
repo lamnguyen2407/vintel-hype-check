@@ -508,7 +508,7 @@ textarea:focus-visible {
 .result-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 22px; margin-bottom: 32px; }
 .result-heading h1 { max-width: 880px; margin: 10px 0 0; font-size: clamp(2.6rem, 6vw, 5.5rem); line-height: .9; letter-spacing: -.04em; }
 .judge-mode { padding: 10px 12px; border: 1px solid var(--line); white-space: nowrap; }
-.judge-mode.openai { border-color: var(--green-dark); color: var(--green); }
+.judge-mode.gemini { border-color: var(--green-dark); color: var(--green); }
 .judge-mode.fallback { color: var(--warning); }
 .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); }
 
