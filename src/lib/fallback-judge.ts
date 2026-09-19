@@ -98,11 +98,11 @@ function scoreEntry(entry: JudgeEntry): ScoreBreakdown {
   const flattery = clamp(substance * 7 + flatteryHits * 3 + imageryHits, 20);
   const total = creativity + eloquence + specificity + flattery;
 
-  let comment = "Giám khảo vẫn đang chờ một cú nịnh thật sự!";
-  if (total >= 82) comment = "Cú nịnh cấp thiên hà — ban chủ nhiệm nghe xong muốn tuyển thẳng!";
-  else if (total >= 68) comment = "Ngọt, đúng trọng tâm và đủ sức làm AI cũng phải đỏ mặt!";
-  else if (total >= 50) comment = "Có tiềm năng, thêm một cú chơi chữ nữa là bùng nổ!";
-  else if (total >= 28) comment = "Đã có tín hiệu nịnh, nhưng mô hình cần thêm dữ liệu!";
+  let comment = "The judge is still waiting for a pitch with real conviction.";
+  if (total >= 82) comment = "World-class hype — sharp enough to earn an instant club invitation.";
+  else if (total >= 68) comment = "Specific, confident, and dramatic enough to make the model blush.";
+  else if (total >= 50) comment = "Good instincts. One stronger image or punchline would make it land.";
+  else if (total >= 28) comment = "The signal is there, but this pitch needs more evidence and energy.";
 
   return {
     id: entry.id,
