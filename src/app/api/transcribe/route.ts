@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { generateGeminiContent } from "@/lib/gemini-api";
 
 export const runtime = "nodejs";
 
@@ -17,7 +17,7 @@ function normalizeClubVocabulary(text: string) {
 }
 
 export async function POST(request: Request) {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     return Response.json({ error: "Advanced transcription is not configured." }, { status: 503 });
   }
 
@@ -34,23 +34,23 @@ export async function POST(request: Request) {
     }
 
     const vocabularyPrompt = language === "vi"
-      ? "Bản ghi có thể nói tiếng Việt xen tiếng Anh về AI và machine learning. Tên riêng quan trọng: Vintelligence, Vintel, VinUniversity, VinUni, Data Science and AI Club. Giữ nguyên chính xác các tên riêng này."
-      : "The recording discusses AI and machine learning. Important proper nouns: Vintelligence, Vintel, VinUniversity, VinUni, Data Science and AI Club. Spell these names exactly.";
+      ? "Transcribe this recording faithfully in Vietnamese, preserving any English AI terms. Return only the transcript, with no labels or commentary. Important names: Vintelligence, Vintel, VinUniversity, VinUni, Data Science and AI Club. Spell these names exactly. Ignore background music and unrelated voices."
+      : "Transcribe this recording faithfully in English. Return only the transcript, with no labels or commentary. Important names: Vintelligence, Vintel, VinUniversity, VinUni, Data Science and AI Club. Spell these names exactly. Ignore background music and unrelated voices.";
 
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const transcription = await client.audio.transcriptions.create({
-      file: audio,
-      model: process.env.OPENAI_TRANSCRIBE_MODEL ?? "gpt-4o-transcribe",
-      language,
+    const text = await generateGeminiContent({
+      apiKey: process.env.GEMINI_API_KEY,
+      model: process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-3.8-flash",
       prompt: vocabularyPrompt,
-      response_format: "json",
-      chunking_strategy: "auto",
+      audio: {
+        mimeType: audio.type || "audio/webm",
+        data: Buffer.from(await audio.arrayBuffer()).toString("base64"),
+      },
       temperature: 0,
     });
 
-    const text = normalizeClubVocabulary(transcription.text);
-    if (!text) return Response.json({ error: "No speech was detected." }, { status: 422 });
-    return Response.json({ text, model: process.env.OPENAI_TRANSCRIBE_MODEL ?? "gpt-4o-transcribe" });
+    const normalizedText = normalizeClubVocabulary(text);
+    if (!normalizedText) return Response.json({ error: "No speech was detected." }, { status: 422 });
+    return Response.json({ text: normalizedText, model: process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-3.8-flash" });
   } catch (error) {
     console.error("Transcription API failed:", error);
     return Response.json({ error: "Advanced transcription failed. The live transcript is still available." }, { status: 502 });
