@@ -3,6 +3,7 @@ import { zodTextFormat } from "openai/helpers/zod";
 import { ZodError } from "zod";
 
 import { buildFallbackResult } from "@/lib/fallback-judge";
+import { getQuestionById } from "@/lib/game-config";
 import { buildJudgeInput, JUDGE_SYSTEM_PROMPT } from "@/lib/judge-prompt";
 import {
   judgeModelSchema,
@@ -15,17 +16,27 @@ export const runtime = "nodejs";
 
 function finalizeScores(
   round: number,
+  questionId: string,
   output: JudgeModelOutput,
 ): JudgeResponse {
+  const question = getQuestionById(questionId, round);
+  if (!question) throw new Error("Unknown round question.");
+
   const players: ScoreBreakdown[] = output.players
-    .map((player) => ({
-      ...player,
-      total:
-        player.creativity +
-        player.eloquence +
-        player.specificity +
-        player.flattery,
-    }))
+    .map((player) => {
+      const metrics = question.rubric.map((criterion) => ({
+        key: criterion.key,
+        label: criterion.label,
+        score: Math.min(criterion.max, Math.max(0, player[criterion.key])),
+        max: criterion.max,
+      }));
+      return {
+        id: player.id,
+        metrics,
+        total: metrics.reduce((sum, metric) => sum + metric.score, 0),
+        comment: player.comment,
+      };
+    })
     .sort((a, b) => a.id.localeCompare(b.id));
 
   const playerA = players.find((player) => player.id === "A");
@@ -37,25 +48,31 @@ function finalizeScores(
     if (playerB.total > playerA.total) winner = "B";
   }
 
-  return { round, players, winner, mode: "openai" };
+  return { round, questionId, players, winner, mode: "openai" };
 }
 
 export async function GET() {
   return Response.json({
     configured: Boolean(process.env.OPENAI_API_KEY),
-    model: process.env.OPENAI_MODEL ?? "gpt-6-astra",
+    judgeModel: process.env.OPENAI_MODEL ?? "gpt-6-astra",
+    transcriptionModel: process.env.OPENAI_TRANSCRIBE_MODEL ?? "gpt-4o-transcribe",
   });
 }
 
 export async function POST(request: Request) {
   try {
     const payload = judgeRequestSchema.parse(await request.json());
-    const forceFallback = new URL(request.url).searchParams.get("fallback") === "1";
+    const question = getQuestionById(payload.questionId, payload.round);
+    if (!question) {
+      return Response.json({ error: "The selected question is not valid for this round." }, { status: 400 });
+    }
 
+    const forceFallback = new URL(request.url).searchParams.get("fallback") === "1";
     if (!process.env.OPENAI_API_KEY || forceFallback) {
       return Response.json(
         buildFallbackResult(
           payload.round,
+          payload.questionId,
           payload.entries,
           forceFallback
             ? "The backup judge was requested for this round."
@@ -69,27 +86,16 @@ export async function POST(request: Request) {
       model: process.env.OPENAI_MODEL ?? "gpt-6-astra",
       input: [
         { role: "system", content: JUDGE_SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: buildJudgeInput(payload.round, payload.entries),
-        },
+        { role: "user", content: buildJudgeInput(question, payload.entries) },
       ],
-      text: {
-        format: zodTextFormat(judgeModelSchema, "club_compliment_scores"),
-      },
+      text: { format: zodTextFormat(judgeModelSchema, "hype_check_scores") },
     });
 
-    if (!response.output_parsed) {
-      throw new Error("The judge returned no structured score.");
-    }
-
-    return Response.json(finalizeScores(payload.round, response.output_parsed));
+    if (!response.output_parsed) throw new Error("The judge returned no structured score.");
+    return Response.json(finalizeScores(payload.round, payload.questionId, response.output_parsed));
   } catch (error) {
     if (error instanceof ZodError) {
-      return Response.json(
-        { error: "The match data is invalid.", details: error.issues },
-        { status: 400 },
-      );
+      return Response.json({ error: "The match data is invalid.", details: error.issues }, { status: 400 });
     }
 
     console.error("Judge API failed:", error);
