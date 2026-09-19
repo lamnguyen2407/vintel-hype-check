@@ -48,8 +48,9 @@ Create a free Gemini API key in [Google AI Studio](https://aistudio.google.com/a
 
 ```env
 GEMINI_API_KEY=your-gemini-api-key
-GEMINI_JUDGE_MODEL=gemini-3.8-flash
-GEMINI_TRANSCRIBE_MODEL=gemini-3.8-flash
+GEMINI_JUDGE_MODEL=gemini-2.5-flash
+GEMINI_TRANSCRIBE_MODEL=gemini-2.5-flash
+GEMINI_FALLBACK_MODELS=gemini-2.5-flash-lite
 ```
 
 Both configured Gemini models have a free tier. Without an API key or after the free quota is exhausted, live browser subtitles and the backup judge still work.
