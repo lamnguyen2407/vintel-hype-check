@@ -23,13 +23,30 @@ const reasoningTerms = [
 
 const clubTerms = [
   "vintelligence", "vintel", "vinuni", "vinuniversity", "club", "clb",
-  "data science", "khoa học dữ liệu", "ai", "machine learning",
+  "data science", "khoa học dữ liệu", "ai", "machine learning", "datathon",
 ];
 
 const humorTerms = [
   "universe", "galaxy", "god", "legend", "legendary", "superhero", "rocket",
   "vũ trụ", "thiên hà", "thần", "huyền thoại", "siêu anh hùng", "tên lửa",
   "even chatgpt", "chatgpt", "plot twist", "breaking news", "thở", "crush",
+];
+
+const hypeTerms = [
+  "best", "greatest", "amazing", "awesome", "brilliant", "legendary",
+  "unmatched", "unbeatable", "number one", "genius", "incredible",
+  "world class", "top tier", "greatest ever", "most powerful",
+  "tuyệt vời", "tuyệt nhất", "tốt nhất", "đỉnh", "số một", "xuất sắc",
+  "xịn", "bá đạo", "vô đối", "huyền thoại", "siêu đỉnh", "đẳng cấp",
+  "to nhất", "oai nhất", "tâm huyết", "thiên tài", "đỉnh nhất",
+];
+
+const absurdityTerms = [
+  "universe", "galaxy", "solar system", "planet", "god", "superhero",
+  "rocket", "alien", "black hole", "save the world", "break the internet",
+  "vũ trụ", "thiên hà", "hệ mặt trời", "hành tinh", "thần", "siêu anh hùng",
+  "tên lửa", "người ngoài hành tinh", "hố đen", "cứu thế giới", "bộ óc",
+  "chatgpt cũng", "ai cũng phải", "mặt trời cũng", "nasa", "elon musk",
 ];
 
 function clamp(value: number, maximum: number) {
@@ -59,16 +76,20 @@ function scoreEntry(entry: JudgeEntry, questionId: string): ScoreBreakdown {
   const reasoningHits = countMatches(normalized, reasoningTerms);
   const clubHits = countMatches(normalized, clubTerms);
   const humorHits = countMatches(normalized, humorTerms);
+  const hypeHits = countMatches(normalized, hypeTerms);
+  const absurdityHits = countMatches(normalized, absurdityTerms);
   const jitter = stableJitter(normalized);
   const [first, second, third, fourth] = question.rubric;
 
   let rawScores: number[];
   if (question.type === "hype") {
+    const hypeIntensity = Math.min(1, hypeHits / 4);
+    const playfulEnergy = Math.min(1, (humorHits + absurdityHits) / 3);
     rawScores = [
-      substance * 13 + humorHits * 5 + jitter,
-      substance * 10 + uniqueRatio * 9 + humorHits * 2,
-      substance * 6 + clubHits * 5,
-      substance * 8 + humorHits * 2 + clubHits * 2,
+      7 + hypeIntensity * 16 + playfulEnergy * 5 + substance * 3 + Math.min(clubHits, 2),
+      playfulEnergy * 20 + hypeIntensity * 5 + uniqueRatio * 3 + jitter,
+      playfulEnergy * 16 + hypeIntensity * 4 + substance * 2 + jitter,
+      Math.min(clubHits, 2) * 4 + substance * 2,
     ];
   } else {
     rawScores = [
@@ -99,9 +120,9 @@ function scoreEntry(entry: JudgeEntry, questionId: string): ScoreBreakdown {
   if (alignmentComment) {
     comment = alignmentComment;
   } else if (question.type === "hype") {
-    if (total >= 82) comment = "That was shameless, specific, and absurdly effective. The club’s ego has officially reached orbit.";
-    else if (total >= 62) comment = "Solid hype energy. One sharper punchline would make the room lose it.";
-    else if (total >= 38) comment = "The compliment landed, but the comedy flight is still waiting for clearance.";
+    if (total >= 82) comment = "Shameless, ridiculous, and cosmically effective. Vintelligence’s ego has officially left the solar system.";
+    else if (total >= 62) comment = "Glorious nonsense with real hype energy. Push the exaggeration one galaxy further next time.";
+    else if (total >= 38) comment = "The praise landed. Now turn off the logic and make the flattery completely unhinged.";
   } else {
     if (total >= 82) comment = "Accurate, concrete, and cleanly explained — exactly how to make a technical idea feel simple.";
     else if (total >= 62) comment = "The core idea is right; one more concrete detail would make the explanation stronger.";
