@@ -7,7 +7,7 @@ A two-player, three-round AI challenge for the Vintelligence Club Fair. Players 
 - Round 1: easy AI knowledge question.
 - Round 2: easy machine-learning explanation question.
 - Round 3: funny, original, and shameless Vintelligence flattery.
-- Each player gets 15 seconds per round.
+- Each player gets 20 seconds in Rounds 1–2 and 30 seconds in Round 3.
 - Each round uses a different 100-point rubric.
 - The final scoreboard separates Round 1, Round 2, Round 3, and the 300-point total.
 
