@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 export const judgeRequestSchema = z.object({
-  round: z.number().int().min(1).max(9),
+  round: z.number().int().min(1).max(3),
+  questionId: z.string().trim().min(1).max(80),
   entries: z
     .array(
       z.object({
@@ -15,18 +16,18 @@ export const judgeRequestSchema = z.object({
     }),
 });
 
+const playerScoreSchema = z.object({
+  id: z.enum(["A", "B"]),
+  criterion1: z.number().int().min(0).max(100),
+  criterion2: z.number().int().min(0).max(100),
+  criterion3: z.number().int().min(0).max(100),
+  criterion4: z.number().int().min(0).max(100),
+  comment: z.string().min(1).max(220),
+});
+
 export const judgeModelSchema = z.object({
   players: z
-    .array(
-      z.object({
-        id: z.enum(["A", "B"]),
-        creativity: z.number().int().min(0).max(30),
-        eloquence: z.number().int().min(0).max(25),
-        specificity: z.number().int().min(0).max(25),
-        flattery: z.number().int().min(0).max(20),
-        comment: z.string().min(1).max(180),
-      }),
-    )
+    .array(playerScoreSchema)
     .length(2)
     .refine((players) => new Set(players.map((player) => player.id)).size === 2, {
       message: "Scores must contain one Player A and one Player B.",
