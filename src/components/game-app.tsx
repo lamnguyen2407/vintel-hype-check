@@ -533,7 +533,7 @@ export default function GameApp() {
 
           {phase === "round-result" && roundResult && (
             <section className="result-panel">
-              <div className="result-heading"><div><span className="eyebrow">ROUND 0{round} VERDICT</span><h1>{roundResult.winner === "tie" ? "SYSTEM TIE" : `${players.find((player) => player.id === roundResult.winner)?.name} TAKES IT`}</h1></div><span className={`judge-mode ${roundResult.mode}`}>{roundResult.mode === "openai" ? "CALIBRATED AI JUDGE" : "BACKUP JUDGE"}</span></div>
+              <div className="result-heading"><div><span className="eyebrow">ROUND 0{round} VERDICT</span><h1>{roundResult.winner === "tie" ? "SYSTEM TIE" : `${players.find((player) => player.id === roundResult.winner)?.name} TAKES IT`}</h1></div><span className={`judge-mode ${roundResult.mode}`}>{roundResult.mode === "gemini" ? "GEMINI AI JUDGE" : "BACKUP JUDGE"}</span></div>
               <div className="result-grid">
                 {players.map((player) => {
                   const score = resultFor(player.id);
