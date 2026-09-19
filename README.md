@@ -17,7 +17,7 @@ The browser uses two transcription layers:
 
 1. Chrome Speech Recognition supplies immediate live subtitles.
 2. `MediaRecorder` captures a noise-suppressed mono recording.
-3. `/api/transcribe` sends the final recording to `gpt-4o-transcribe`.
+3. `/api/transcribe` sends the final recording to Gemini for free-tier audio transcription.
 4. A vocabulary prompt and local normalizer preserve names such as Vintelligence, Vintel, VinUniversity, and VinUni.
 5. The player can verify or edit the transcript before judging.
 
@@ -44,15 +44,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in Google Chrome.
 
-Configure `.env.local` for advanced transcription and AI judging:
+Create a free Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey), then configure `.env.local` for advanced transcription and AI judging:
 
 ```env
-OPENAI_API_KEY=sk-your-api-key
-OPENAI_MODEL=gpt-6-astra
-OPENAI_TRANSCRIBE_MODEL=gpt-4o-transcribe
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_JUDGE_MODEL=gemini-3.8-flash
+GEMINI_TRANSCRIBE_MODEL=gemini-3.8-flash
 ```
 
-Without an API key, live browser subtitles and the backup judge still work.
+Both configured Gemini models have a free tier. Without an API key or after the free quota is exhausted, live browser subtitles and the backup judge still work.
 
 ## Controls
 
