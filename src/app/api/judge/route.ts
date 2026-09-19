@@ -58,8 +58,8 @@ export async function POST(request: Request) {
           payload.round,
           payload.entries,
           forceFallback
-            ? "Đang sử dụng Backup Judge theo yêu cầu."
-            : "Chưa có OPENAI_API_KEY — đang sử dụng Backup Judge.",
+            ? "The backup judge was requested for this round."
+            : "OPENAI_API_KEY is not configured, so the backup judge scored this round.",
         ),
       );
     }
@@ -87,14 +87,14 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return Response.json(
-        { error: "Dữ liệu trận đấu không hợp lệ.", details: error.issues },
+        { error: "The match data is invalid.", details: error.issues },
         { status: 400 },
       );
     }
 
     console.error("Judge API failed:", error);
     return Response.json(
-      { error: "AI Judge tạm thời không phản hồi. Hãy thử Backup Judge." },
+      { error: "The AI judge is temporarily unavailable. Try the backup judge." },
       { status: 502 },
     );
   }
