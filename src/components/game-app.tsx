@@ -242,6 +242,8 @@ export default function GameApp() {
           const extension = capture.audio.type.includes("mp4") ? "m4a" : "webm";
           form.append("audio", capture.audio, `hype-check.${extension}`);
           form.append("language", activePlayer.language);
+          form.append("question", activeQuestion.prompt);
+          form.append("liveTranscript", capture.liveTranscript.slice(0, 1_200));
           const response = await fetch("/api/transcribe", { method: "POST", body: form });
           const data = (await response.json()) as { text?: string; error?: string };
           if (!response.ok || !data.text) throw new Error(data.error || "Transcription failed.");
@@ -258,7 +260,7 @@ export default function GameApp() {
     } finally {
       finishingRef.current = false;
     }
-  }, [activePlayer.language, stopSpeech]);
+  }, [activePlayer.language, activeQuestion.prompt, stopSpeech]);
 
   useEffect(() => {
     if (phase !== "speaking") return;
