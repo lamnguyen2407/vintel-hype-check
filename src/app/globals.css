@@ -379,6 +379,11 @@ textarea:focus-visible {
 .ghost-button:hover,
 .stop-button:hover { border-color: var(--green); color: var(--green); }
 
+.home-button {
+  border-color: var(--green-dark);
+  color: var(--green);
+}
+
 .round-nav {
   display: flex;
   min-height: 64px;
