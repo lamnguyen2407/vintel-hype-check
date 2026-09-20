@@ -431,6 +431,7 @@ export default function GameApp() {
         <BrandLockup compact />
         <div className="header-actions">
           <span className={`status-chip ${judgeConfigured ? "online" : "backup"}`}><i /> {judgeConfigured ? "AI SYSTEM ONLINE" : "BACKUP MODE"}</span>
+          <button className="ghost-button home-button" type="button" onClick={resetGame} aria-label="Return to home screen">HOME</button>
           <button className="ghost-button" type="button" onClick={toggleFullscreen}>{isFullscreen ? "EXIT" : "FULLSCREEN"}</button>
         </div>
       </header>
